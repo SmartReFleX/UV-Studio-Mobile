@@ -30,6 +30,17 @@ $proj  = $PSScriptRoot
 $build = Join-Path $proj 'build'
 $apkDir = Join-Path $proj 'apk'
 
+# The NOTICE shipped inside the APK (assets/NOTICE.txt) must match the one at the
+# repository root. Refuse to build rather than ship stale attribution text.
+$rootNotice = Join-Path (Split-Path $proj -Parent) 'NOTICE'
+if (Test-Path $rootNotice) {
+    $a = (Get-FileHash $rootNotice -Algorithm SHA256).Hash
+    $b = (Get-FileHash (Join-Path $proj 'assets\NOTICE.txt') -Algorithm SHA256).Hash
+    if ($a -ne $b) {
+        throw "assets/NOTICE.txt differs from ..\NOTICE. Copy the root NOTICE over it, then build again."
+    }
+}
+
 # Signing: keystore.jks is private and never committed. The password is read
 # from UVSTUDIO_KS_PASS (or UVSTUDIO_KS_FILE / UVSTUDIO_KS_ALIAS); the values
 # below are only defaults for a throwaway keystore generated on first build.
