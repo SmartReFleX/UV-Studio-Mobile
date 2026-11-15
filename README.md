@@ -77,6 +77,14 @@ Releases is signed with a private key that will never be committed.
 - F4HWN firmware with the runtime serial protocol (Labs / Fusion)
 - Android 7.0 or newer, USB-C OTG support
 
+## Platforms
+
+| Platform | Status |
+| --- | --- |
+| Android 7.0+ | Supported |
+| iOS / iPadOS | **Not supported.** Apple gives third-party apps no USB host access, so the radio cannot be reached from an iPhone or iPad. See [ios/README.md](ios/README.md). |
+| Desktop | Not available |
+
 ## Support
 
 If this app is useful to you, you can buy me a coffee:
