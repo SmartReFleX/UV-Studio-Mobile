@@ -76,6 +76,6 @@ python .\tools\gen_icon.py        # regenerate the launcher icon
 
 ## Licence
 
-Apache-2.0, © 2026 Claudiu Panga. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
+Apache-2.0, © 2026 Claudiu Panga. See [`LICENSE`](../LICENSE) and [`NOTICE`](../NOTICE).
 Independent native Android client compatible with UV Studio by Armel FAUVEAU (F4HWN).
 Unofficial community project, not tested or supported by F4HWN.
