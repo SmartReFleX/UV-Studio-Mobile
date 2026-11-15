@@ -23,7 +23,7 @@ no flashing, no calibration, no app manager.
 
 | Option | Feasible | Notes |
 | --- | --- | --- |
-| **Android app** | Yes | Available now in [Releases](../releases) |
+| **Android app** | Yes | Available now in [Releases](https://github.com/SmartReFleX/UV-Studio-Mobile/releases/latest) |
 | **macOS app** | Yes | IOKit / DriverKit give real USB access; needs a Swift rewrite |
 | **Hardware bridge + iOS app** | Yes | ESP32-S3 connected to the radio, exposed over Wi-Fi or BLE |
 | **iOS app alone** | No | Blocked by the missing USB host API |
