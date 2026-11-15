@@ -7,7 +7,7 @@
 #   zipalign   align the archive
 #   apksigner  sign with the local debug keystore
 #
-# Usage:  powershell -NoProfile -File .\android\build.ps1 [-Clean]
+# Usage:  powershell -NoProfile -File .\android-port\build.ps1 [-Clean]
 
 param([switch]$Clean)
 
@@ -23,7 +23,7 @@ $bt       = Join-Path $sdk 'build-tools'
 $androidJar = Join-Path $sdk 'platform\android.jar'
 
 if (-not (Test-Path $androidJar)) {
-    throw "Android toolchain missing. Run android\tools\get-toolchain.ps1 first."
+    throw "Android toolchain missing. Run android-port\tools\get-toolchain.ps1 first."
 }
 
 $proj  = $PSScriptRoot
