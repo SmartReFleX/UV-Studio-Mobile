@@ -16,10 +16,12 @@ Made by **Claudiu Panga** (SmartReFleX) — https://github.com/SmartReFleX
 ![Home](docs/home.jpg)
 ![Live view](docs/live-view.jpg)
 
-> **Status: first public build (1.0.0), under community testing.** Firmware
-> flashing, calibration writes and external-flash writes have not been validated
-> outside my own radio. Back up the calibration data before writing anything.
-> Provided as is, with no warranty; use it at your own risk.
+> **Status: first public build (1.0.0), under community testing.** Tested on a
+> UV-K1 only — the UV-K5 V3 runs the same code path but has not been tried on
+> that hardware. Firmware flashing, calibration writes and external-flash writes
+> have not been validated outside my own radio either. Back up the calibration
+> data before writing anything. Provided as is, with no warranty; use it at your
+> own risk.
 
 ## Features
 
