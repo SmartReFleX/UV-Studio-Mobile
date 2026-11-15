@@ -1,0 +1,17 @@
+# Build output
+android-port/build/
+android-port/apk/
+*.apk
+*.idsig
+
+# Signing material — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# Upstream reference material (not redistributed)
+android-port/_ref/
+
+# Local tooling
+.local/
+*.log

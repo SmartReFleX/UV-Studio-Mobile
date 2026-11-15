@@ -1,0 +1,13 @@
+# Build output
+build/
+apk/
+*.apk
+*.idsig
+
+# Signing material — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# Upstream reference material (not redistributed)
+_ref/

@@ -1,0 +1,39 @@
+UV Studio Mobile
+Copyright 2026 Claudiu Panga (SmartReFleX)
+Licensed under the Apache License, Version 2.0.
+
+This application is an independent native Android client compatible with
+UV Studio by Armel FAUVEAU (F4HWN).
+
+Unofficial community project, not tested or supported by F4HWN.
+
+Original work
+-------------
+UV Studio
+Copyright 2026 Armel FAUVEAU
+
+UV Studio incorporates software from the following projects:
+
+K5Viewer
+Copyright 2025 Armel FAUVEAU
+
+UVTools2
+Copyright 2025 Armel FAUVEAU
+
+UV Studio is licensed under the Apache License, Version 2.0.
+https://armel.github.io/uvstudio/
+
+The device protocol was reimplemented in Java and adapted for Android; changes
+were made. No part of the UV Studio web application is executed at runtime and
+no code from it is bundled with this app.
+
+Firmware and apps
+-----------------
+The radio firmware and the overlay apps are downloaded from their official
+repositories when the user opens the catalogs; they are not distributed with
+this application.
+
+Trademarks
+----------
+UV-K5 and UV-K1 are used only to describe compatibility. All trademarks belong
+to their respective owners.

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UV Studio Android - home screen</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #1b2534; display: flex; justify-content: center; padding: 20px;
+         font-family: Roboto, "Segoe UI", system-ui, sans-serif; }
+  #phone {
+    width: 400px; min-height: 858px; background: #0b1220; color: #e6edf7;
+    border-radius: 30px; overflow: hidden; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  }
+  .statusbar { height: 30px; display: flex; align-items: center; justify-content: space-between;
+               padding: 0 18px; font-size: 12px; color: #8fa3bf; letter-spacing: .3px; }
+  .content { padding: 12px 18px 22px; }
+  h1 { font-size: 26px; letter-spacing: 2px; margin: 0; font-weight: 700; }
+  .sub { font-size: 12px; color: #8fa3bf; margin: 4px 0 16px; }
+  .status { display: flex; align-items: center; gap: 10px; background: #131c2b;
+            border: 1px solid #22304a; border-radius: 16px; padding: 13px 14px; }
+  .dot { color: #2dd4bf; font-size: 15px; }
+  .status .txt { flex: 1; }
+  .status b { display: block; font-size: 14px; }
+  .status small { color: #8fa3bf; font-size: 11px; }
+  .pill { font-size: 12px; font-weight: 700; color: #2dd4bf; background: rgba(45,212,191,.1);
+          border: 1px solid rgba(45,212,191,.33); border-radius: 20px; padding: 9px 14px; }
+  .label { font-size: 11px; font-weight: 700; letter-spacing: 1.3px; color: #8fa3bf;
+           margin: 20px 0 8px 4px; }
+  .card { display: flex; align-items: center; gap: 12px; background: #131c2b;
+          border: 1px solid #22304a; border-radius: 16px; padding: 11px 12px; margin-bottom: 9px; }
+  .badge { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
+           justify-content: center; color: #2dd4bf;
+           background: rgba(45,212,191,.1); border: 1px solid rgba(45,212,191,.2); }
+  .badge svg { width: 22px; height: 22px; }
+  .card .t { flex: 1; }
+  .card .t b { display: block; font-size: 15px; }
+  .card .t small { color: #8fa3bf; font-size: 11px; }
+  .arrow { color: #8fa3bf; font-size: 22px; padding-right: 4px; }
+  .full { margin-top: 22px; border: 1px solid #22304a; border-radius: 14px; padding: 14px;
+          text-align: center; color: #2dd4bf; font-weight: 700; font-size: 14px; }
+  .legal { margin-top: 18px; color: #8fa3bf; font-size: 11px; line-height: 1.5; padding: 0 4px; }
+  .nav { position: absolute; bottom: 0; left: 0; right: 0; height: 26px; display: flex;
+         align-items: center; justify-content: center; }
+  .nav i { width: 120px; height: 4px; border-radius: 2px; background: #33405a; }
+</style>
+</head>
+<body>
+<div id="phone">
+  <div class="statusbar"><span>9:41</span><span>LTE &#9646;&#9646;&#9646; 87%</span></div>
+  <div class="content">
+    <h1>UV STUDIO</h1>
+    <div class="sub">UV-K5 / UV-K1 &middot; USB OTG &middot; the full UV Studio</div>
+
+    <div class="status">
+      <span class="dot">&#9679;</span>
+      <span class="txt"><b>Radio connected</b><small>Connect the radio with a USB-C OTG cable</small></span>
+      <span class="pill">Connect</span>
+    </div>
+
+    <div class="label">TOOLS</div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="11.5" rx="0"/><path d="M8 20.5h8M12 16.5v4M7 9h5"/></svg></div>
+      <div class="t"><b>Live view</b><small>Radio screen and keypad, in real time</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M13 2 4 13.5h7L10 22l9-11.5h-7z"/></svg></div>
+      <div class="t"><b>Flash firmware</b><small>Write .bin, browse the catalog, verify</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></div>
+      <div class="t"><b>Firmware slots</b><small>Multiboot: write, rename, delete slots</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></div>
+      <div class="t"><b>Install applications</b><small>Sub-GHz, Auto Key RX and more</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="15" cy="17" r="2.5"/></svg></div>
+      <div class="t"><b>Calibration</b><small>Back up and restore calibration data</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3.5 17l5.5-6 4 4 3-3 4.5 4.5"/><circle cx="15.5" cy="6.4" r="1.6"/></svg></div>
+      <div class="t"><b>Boot logo</b><small>Upload or dump the boot image</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 20v-4M9.3 20v-8M14.7 20V8M20 20V4"/></svg></div>
+      <div class="t"><b>RF log</b><small>Spectrum and signal history</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="6" width="14" height="12" rx="2"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M8.5 10v4M12 10v4M15.5 10v4"/></svg></div>
+      <div class="t"><b>External flash</b><small>Read or write the external flash (Labs)</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="card">
+      <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-8-8"/><path d="M12 .8v6.4M12 .8 9.2 3.6M12 .8l2.8 2.8"/></svg></div>
+      <div class="t"><b>Factory reset</b><small>Restore factory settings (Labs)</small></div><div class="arrow">&rsaquo;</div>
+    </div>
+
+    <div class="full">Full studio</div>
+
+    <div class="legal">Radio work and app installation are only allowed on equipment you own.</div>
+  </div>
+  <div class="nav"><i></i></div>
+</div>
+</body>
+</html>
