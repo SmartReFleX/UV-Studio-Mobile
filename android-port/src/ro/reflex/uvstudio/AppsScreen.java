@@ -23,8 +23,23 @@ final class AppsScreen extends ToolScreen {
     private TextView summary;
     private List<Radio.AppInfo> apps = new ArrayList<>();
     private final java.util.Map<String, String> knownScreens = new java.util.HashMap<>();
+    private final java.util.Map<String, Catalog.Entry> remote = new java.util.HashMap<>();
     private String firmware = "";
     private int slotCount = 16;
+    private int updateCount = 0;
+    private boolean catalogChecked = false;
+    private boolean catalogDone = false;
+    private String officialError = null;
+    private String communityError = null;
+
+    /** Result of one catalog pass, kept whole so the UI can explain what happened. */
+    private static final class CatalogData {
+        final List<Catalog.Entry> entries = new ArrayList<>();
+        int official;
+        int community;
+        String officialError;
+        String communityError;
+    }
 
     AppsScreen(MainActivity app, RadioLink link) {
         super(app, link, "Install applications",
@@ -107,6 +122,7 @@ final class AppsScreen extends ToolScreen {
             apps = value;
             render();
             finishProgress("App list read", Ui.OK);
+            checkUpdates();
         });
     }
 
@@ -122,8 +138,22 @@ final class AppsScreen extends ToolScreen {
     private void render() {
         int installed = 0;
         for (Radio.AppInfo info : apps) if (info.installed()) installed++;
+
+        updateCount = 0;
+        for (Radio.AppInfo info : apps) {
+            if (!info.installed()) continue;
+            Catalog.Entry candidate = remote.get(key(info.name()));
+            if (candidate != null
+                    && Catalog.compareVersions(candidate.version, info.version()) > 0) {
+                updateCount++;
+            }
+        }
+
         summary.setText(firmware + " · " + installed + " app" + (installed == 1 ? "" : "s")
-                + " installed · " + apps.size() + " slots scanned");
+                + " installed · " + apps.size() + " slots scanned"
+                + (updateCount > 0 ? " · " + updateCount + " update"
+                        + (updateCount == 1 ? "" : "s") + " available" : "")
+                + ((officialError != null || communityError != null) ? " · catalog partial" : ""));
 
         listBox.removeAllViews();
         boolean any = false;
@@ -152,12 +182,42 @@ final class AppsScreen extends ToolScreen {
             LinearLayout labels = new LinearLayout(app);
             labels.setOrientation(LinearLayout.VERTICAL);
             labels.addView(Ui.text(app, "#" + (info.slot + 1) + "  " + info.name(), 14, Ui.TEXT, true));
-            String state = info.installed() ? "installed"
-                    : info.incompatible() ? "incompatible with this firmware"
-                    : "status " + info.status;
-            labels.addView(Ui.text(app, info.version() + " · " + state, 11, Ui.MUTED, false));
+            Catalog.Entry candidate = info.installed()
+                    ? remote.get(key(info.name())) : null;
+            boolean known = candidate != null && candidate.version != null
+                    && !candidate.version.isEmpty();
+            boolean canUpgrade = known
+                    && Catalog.compareVersions(candidate.version, info.version()) > 0;
+
+            String state;
+            if (!info.installed()) {
+                state = info.incompatible() ? "incompatible with this firmware"
+                        : "status " + info.status;
+            } else if (canUpgrade) {
+                state = info.version() + " \u2192 " + candidate.version + " available";
+            } else if (known) {
+                state = info.version() + " · up to date";
+            } else if (candidate != null) {
+                state = info.version() + " · in catalog";
+            } else {
+                state = info.version() + (catalogDone ? " · local build" : " · installed");
+            }
+            labels.addView(Ui.text(app, state, 11,
+                    canUpgrade ? Ui.ACCENT : (known ? Ui.OK : Ui.MUTED), false));
             row.addView(labels, new LinearLayout.LayoutParams(0,
                     LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            if (canUpgrade) {
+                TextView upgrade = Ui.text(app, "Upgrade", 11, Ui.ACCENT, true);
+                upgrade.setPadding(dp(10), dp(5), dp(10), dp(5));
+                upgrade.setBackground(Ui.rounded(Ui.ACCENT_SOFT, dp(30), Ui.ACCENT_LINE, 1));
+                LinearLayout.LayoutParams upgradeParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                upgradeParams.rightMargin = dp(6);
+                upgrade.setOnClickListener(v -> confirmUpgrade(info.slot, candidate));
+                row.addView(upgrade, upgradeParams);
+            }
 
             TextView erase = Ui.text(app, "Delete", 11, Ui.DANGER, true);
             erase.setPadding(dp(8), dp(6), dp(8), dp(6));
@@ -170,6 +230,150 @@ final class AppsScreen extends ToolScreen {
         if (!any) {
             listBox.addView(Ui.body(app, "No apps installed. Use “Install app from local” to add one."));
         }
+    }
+
+    /* ---------------------------- upgrades ------------------------------ */
+
+    /**
+     * The catalogs put the useful name in different fields: the official archive
+     * fills {@code edition} with the label and {@code name} with "Beam.app", the
+     * community one fills {@code edition} with the name and {@code name} with the
+     * whole "apps/messenger/1.8/MESSENGER.app" path. Key on the label.
+     */
+    private static String entryKey(Catalog.Entry entry) {
+        String label = entry.edition != null && !entry.edition.isEmpty()
+                ? entry.edition : entry.name;
+        return key(label);
+    }
+
+    private static String entryLabel(Catalog.Entry entry) {
+        return entry.edition != null && !entry.edition.isEmpty()
+                ? entry.edition : entry.name;
+    }
+
+    private static String key(String name) {
+        if (name == null) return "";
+        String id = name.trim().toLowerCase(java.util.Locale.ROOT);
+        if (id.endsWith(".app")) id = id.substring(0, id.length() - 4);
+        /* File names and header names differ in spacing and punctuation:
+         * "APRSRX.app" vs "APRS RX", "CWPRACTICE.app" vs "CW PRACTICE". */
+        return id.replaceAll("[^a-z0-9]", "");
+    }
+
+    /** Compares the installed apps against the catalogs, once the list is known. */
+    private void checkUpdates() {
+        if (catalogChecked || firmware == null || firmware.isEmpty()) return;
+        catalogChecked = true;
+        final List<Radio.AppInfo> snapshot = new ArrayList<>(apps);
+        runLocal("app-updates", progress -> {
+            CatalogData data = new CatalogData();
+            progress.publish(15, "Reading the official catalog…");
+            try {
+                List<Catalog.Entry> list = Catalog.apps(firmware);
+                data.official = list.size();
+                data.entries.addAll(list);
+            } catch (Exception e) {
+                data.officialError = e.getMessage();
+            }
+            progress.publish(35, "Reading the community catalog…");
+            try {
+                List<Catalog.Entry> list = Catalog.community();
+                data.community = list.size();
+                data.entries.addAll(list);
+            } catch (Exception e) {
+                data.communityError = e.getMessage();
+            }
+
+            java.util.Map<String, Catalog.Entry> best = new java.util.HashMap<>();
+            for (Catalog.Entry entry : data.entries) {
+                if (entryKey(entry).isEmpty()) continue;
+                String id = entryKey(entry);
+                Catalog.Entry previous = best.get(id);
+                if (previous == null
+                        || Catalog.compareVersions(entry.version, previous.version) > 0) {
+                    best.put(id, entry);
+                }
+            }
+
+            /* The official archive publishes file names only, no version. Read the
+             * 64-byte FAP1 header of the installed ones to learn their version. */
+            int done = 0;
+            int total = 0;
+            for (Radio.AppInfo info : snapshot) if (info.installed()) total++;
+            for (Radio.AppInfo info : snapshot) {
+                if (!info.installed()) continue;
+                String id = key(info.name());
+                Catalog.Entry entry = best.get(id);
+                if (entry == null || !entry.version.isEmpty()) continue;
+                done++;
+                progress.publish(35 + done * 60 / Math.max(1, total),
+                        "Checking " + info.name() + "…");
+                try {
+                    byte[] file = Catalog.download(entry.url, progress, 0, 100, entry.sha256);
+                    if (file.length >= Radio.APP_HDR_SIZE
+                            && UvProtocol.u32(file, 0) == Radio.APP_MAGIC) {
+                        String version = Radio.ascii(file, 36, 16);
+                        if (!version.isEmpty()) {
+                            best.put(id, new Catalog.Entry(entry.name, version,
+                                    entry.edition, entry.size, entry.url, entry.sha256,
+                                    entry.community, entry.author, entry.description,
+                                    entry.screen));
+                        }
+                    }
+                } catch (Exception ignored) { /* keep going, one app at a time */ }
+            }
+            data.entries.clear();
+            data.entries.addAll(best.values());
+            return data;
+        }, (value, error) -> {
+            if (error != null) {
+                catalogChecked = false;
+                catalogDone = true;
+                officialError = error.getMessage();
+                render();
+                return;
+            }
+            catalogDone = true;
+            officialError = value.officialError;
+            communityError = value.communityError;
+            remote.clear();
+            for (Catalog.Entry entry : value.entries) {
+                if (entryKey(entry).isEmpty()) continue;
+                remote.put(entryKey(entry), entry);
+            }
+            render();
+        });
+    }
+
+    private void confirmUpgrade(final int slot, final Catalog.Entry entry) {
+        new AlertDialog.Builder(app)
+                .setTitle("Upgrade " + entryLabel(entry) + "?")
+                .setMessage("Slot " + (slot + 1) + ": " + versionAt(slot)
+                        + " → " + entry.version + "\n\n"
+                        + entry.size + " bytes, checked against the catalog SHA-256 before "
+                        + "anything is written. The slot is erased and rewritten.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Upgrade", (dialog, which) -> downloadInto(slot, entry))
+                .show();
+    }
+
+    private String versionAt(int slot) {
+        for (Radio.AppInfo info : apps) {
+            if (info.slot == slot) return info.version();
+        }
+        return "?";
+    }
+
+    private void downloadInto(final int slot, final Catalog.Entry entry) {
+        runLocal("app-upgrade",
+                progress -> Catalog.download(entry.url, progress, 0, 100, entry.sha256),
+                (bytes, error) -> {
+                    if (error != null) {
+                        app.toast("Download failed: " + error.getMessage());
+                        return;
+                    }
+                    doInstall(slot, bytes);
+                });
     }
 
     /* ---------------------------- operations ----------------------------- */
