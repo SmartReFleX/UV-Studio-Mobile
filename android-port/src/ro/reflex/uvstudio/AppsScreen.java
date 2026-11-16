@@ -340,6 +340,11 @@ final class AppsScreen extends ToolScreen {
             for (Catalog.Entry entry : value.entries) {
                 if (entryKey(entry).isEmpty()) continue;
                 remote.put(entryKey(entry), entry);
+                /* Keep the published preview so installed apps show it as well,
+                 * not only while the catalog dialog is open. */
+                if (entry.screen != null && !entry.screen.isEmpty()) {
+                    knownScreens.put(entryKey(entry), entry.screen);
+                }
             }
             render();
         });
@@ -438,14 +443,14 @@ final class AppsScreen extends ToolScreen {
 
         for (Catalog.Entry entry : list) {
             if (entry.screen != null && !entry.screen.isEmpty()) {
-                knownScreens.put(AppScreens.idFor(entry.name), entry.screen);
+                knownScreens.put(entryKey(entry), entry.screen);
             }
             LinearLayout row = Ui.row(app);
             row.setPadding(dp(6), dp(8), dp(6), dp(8));
 
             Bitmap art = screenBitmap(entry.screen);
-            if (art == null && !entry.name.isEmpty()) {
-                art = screenBitmap(AppScreens.get(app, AppScreens.idFor(entry.name)));
+            if (art == null && !entryKey(entry).isEmpty()) {
+                art = screenBitmap(AppScreens.get(app, entryKey(entry)));
             }
             if (art != null) {
                 ImageView thumb = new ImageView(app);
