@@ -88,7 +88,7 @@ Step 'link'
     --manifest (Join-Path $proj 'AndroidManifest.xml') `
     -A $assetsDir `
     --min-sdk-version 24 --target-sdk-version 34 `
-    --version-code 3 --version-name '1.0.0' `
+    --version-code 10 --version-name '1.0.6' `
     (Join-Path $build 'res.zip')
 if ($LASTEXITCODE -ne 0) { throw 'aapt2 link failed' }
 
@@ -124,7 +124,7 @@ if (-not (Test-Path $ks)) {
     if ($LASTEXITCODE -ne 0) { throw 'keytool failed' }
 }
 
-$outApk = Join-Path $apkDir 'UV-Studio-Mobile-1.0.0.apk'
+$outApk = Join-Path $apkDir 'UV-Studio-Mobile-1.0.6.apk'
 Step 'sign'
 & "$bt\apksigner.bat" sign --ks $ks --ks-pass "pass:$ksPass" --key-pass "pass:$ksPass" `
     --min-sdk-version 24 --out $outApk (Join-Path $build 'aligned.apk')
