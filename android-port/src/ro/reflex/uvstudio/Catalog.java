@@ -26,7 +26,12 @@ import java.util.regex.Pattern;
 final class Catalog {
 
     private static final String API = "https://api.github.com/repos/armel/uv-k1-k5v3-firmware-custom/contents";
-    private static final String COMMUNITY = "https://raw.githubusercontent.com/armel/fusion-community/main";
+    private static final String COMMUNITY =
+            "https://raw.githubusercontent.com/armel/fusion-community/main";
+    /* raw.githubusercontent is unreachable on some mobile networks; the CDN serves
+     * the same repository, so try it before giving up on the community catalog. */
+    private static final String COMMUNITY_CDN =
+            "https://cdn.jsdelivr.net/gh/armel/fusion-community@main";
     private static final Pattern FIRMWARE = Pattern.compile(
             "(?i)^f4hwn[._-](?:(k1|k5v3)[._-])?([a-z][a-z0-9-]*)(?:[._-].*)?\\.bin$");
     private static final Pattern VERSION = Pattern.compile("(?i)[._-]v(\\d+(?:\\.\\d+)*)");
@@ -165,7 +170,19 @@ final class Catalog {
 
     /** Community catalog published by the radio community (apps.json, format 1). */
     static List<Entry> community() throws Exception {
-        JSONObject root = new JSONObject(getText(COMMUNITY + "/apps.json"));
+        Exception failure = null;
+        for (String base : new String[] {COMMUNITY, COMMUNITY_CDN}) {
+            try {
+                return communityFrom(base);
+            } catch (Exception e) {
+                failure = e;
+            }
+        }
+        throw failure != null ? failure : new Exception("Community catalog unreachable");
+    }
+
+    private static List<Entry> communityFrom(String base) throws Exception {
+        JSONObject root = new JSONObject(getText(base + "/apps.json"));
         if (root.optInt("format", 0) != 1) {
             throw new Exception("Unsupported community catalog format");
         }
@@ -183,7 +200,7 @@ final class Catalog {
             String name = item.optString("name", item.optString("id", "app"));
             String version = item.optString("version", "");
             out.add(new Entry(file, version, name, item.optInt("size", 0),
-                    COMMUNITY + "/" + file, sha, true,
+                    base + "/" + file, sha, true,
                     item.optString("author", ""),
                     item.optString("description", ""),
                     item.optString("screen", "")));
