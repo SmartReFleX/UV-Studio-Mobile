@@ -219,8 +219,7 @@ final class AppsScreen extends ToolScreen {
                 row.addView(upgrade, upgradeParams);
             }
 
-            TextView erase = Ui.text(app, "Delete", 11, Ui.DANGER, true);
-            erase.setPadding(dp(8), dp(6), dp(8), dp(6));
+            TextView erase = pill("Delete", Ui.DANGER, 0x1AF87171, 0x55F87171);
             erase.setOnClickListener(v -> confirmDelete(info.slot));
             row.addView(erase);
 
@@ -277,7 +276,7 @@ final class AppsScreen extends ToolScreen {
             }
             progress.publish(35, "Reading the community catalog…");
             try {
-                List<Catalog.Entry> list = Catalog.community();
+                List<Catalog.Entry> list = Catalog.community(progress);
                 data.community = list.size();
                 data.entries.addAll(list);
             } catch (Exception e) {
@@ -309,7 +308,7 @@ final class AppsScreen extends ToolScreen {
                 progress.publish(35 + done * 60 / Math.max(1, total),
                         "Checking " + info.name() + "…");
                 try {
-                    byte[] file = Catalog.download(entry.url, progress, 0, 100, entry.sha256);
+                    byte[] file = Catalog.download(entry.url, null, 0, 100, entry.sha256);
                     if (file.length >= Radio.APP_HDR_SIZE
                             && UvProtocol.u32(file, 0) == Radio.APP_MAGIC) {
                         String version = Radio.ascii(file, 36, 16);
@@ -441,16 +440,27 @@ final class AppsScreen extends ToolScreen {
                 .setNegativeButton("Cancel", null)
                 .create();
 
+        java.util.Map<String, Radio.AppInfo> installed = new java.util.HashMap<>();
+        for (Radio.AppInfo info : apps) {
+            if (info.installed()) installed.put(key(info.name()), info);
+        }
+
         for (Catalog.Entry entry : list) {
             if (entry.screen != null && !entry.screen.isEmpty()) {
                 knownScreens.put(entryKey(entry), entry.screen);
             }
+
+            String id = entryKey(entry);
+            Radio.AppInfo current = installed.get(id);
+            boolean canUpgrade = current != null && !entry.version.isEmpty()
+                    && Catalog.compareVersions(entry.version, current.version()) > 0;
+
             LinearLayout row = Ui.row(app);
-            row.setPadding(dp(6), dp(8), dp(6), dp(8));
+            row.setPadding(0, dp(6), 0, dp(6));
 
             Bitmap art = screenBitmap(entry.screen);
-            if (art == null && !entryKey(entry).isEmpty()) {
-                art = screenBitmap(AppScreens.get(app, entryKey(entry)));
+            if (art == null && !id.isEmpty()) {
+                art = screenBitmap(AppScreens.get(app, id));
             }
             if (art != null) {
                 ImageView thumb = new ImageView(app);
@@ -459,43 +469,62 @@ final class AppsScreen extends ToolScreen {
                 thumb.setBackground(Ui.rounded(0xFFFFFFFF, dp(6), Ui.LINE, 1));
                 thumb.setPadding(dp(2), dp(2), dp(2), dp(2));
                 LinearLayout.LayoutParams thumbParams =
-                        new LinearLayout.LayoutParams(dp(88), dp(46));
+                        new LinearLayout.LayoutParams(dp(76), dp(40));
                 thumbParams.rightMargin = dp(10);
                 row.addView(thumb, thumbParams);
             }
 
             LinearLayout labels = new LinearLayout(app);
             labels.setOrientation(LinearLayout.VERTICAL);
+            labels.addView(Ui.text(app, entryLabel(entry), 14, Ui.TEXT, true));
 
-            String title = entry.edition
-                    + (entry.version.isEmpty() ? "" : " v" + entry.version);
-            labels.addView(Ui.text(app, title, 14, Ui.TEXT, true));
-
-            StringBuilder sub = new StringBuilder();
-            if (!entry.author.isEmpty()) sub.append(entry.author);
+            StringBuilder meta = new StringBuilder();
+            if (!entry.version.isEmpty()) meta.append("v").append(entry.version);
             if (entry.community) {
-                if (sub.length() > 0) sub.append(" · ");
-                sub.append("community");
+                if (meta.length() > 0) meta.append(" · ");
+                meta.append("community");
             }
             if (entry.size > 0) {
-                if (sub.length() > 0) sub.append(" · ");
-                sub.append(Math.round(entry.size / 1024f)).append(" KB");
+                if (meta.length() > 0) meta.append(" · ");
+                meta.append(Math.round(entry.size / 1024f)).append(" KB");
             }
-            if (sub.length() > 0) {
-                labels.addView(Ui.text(app, sub.toString(), 10, Ui.MUTED, false));
+            if (meta.length() > 0) {
+                labels.addView(Ui.text(app, meta.toString(), 11, Ui.MUTED, false));
             }
             row.addView(labels, new LinearLayout.LayoutParams(0,
                     LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-            row.setOnClickListener(v -> {
-                dialog.dismiss();
-                downloadApp(entry);
-            });
+            if (canUpgrade) {
+                TextView action = pill("Upgrade", Ui.ACCENT, Ui.ACCENT_SOFT, Ui.ACCENT_LINE);
+                action.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    confirmUpgrade(current.slot, entry);
+                });
+                row.addView(action);
+            } else if (current != null) {
+                row.addView(pill("Installed", Ui.OK, 0x1A34D399, 0x5534D399));
+            } else {
+                TextView action = pill("Install", Ui.ACCENT, Ui.ACCENT_SOFT, Ui.ACCENT_LINE);
+                action.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    downloadApp(entry);
+                });
+                row.addView(action);
+            }
+
             box.addView(row);
             box.addView(Ui.divider(app));
         }
 
         dialog.show();
+    }
+
+    /** Small pill used for actions and states alike: same padding, same shape. */
+    private TextView pill(String label, int color, int fill, int stroke) {
+        TextView action = Ui.text(app, label, 11, color, true);
+        action.setPadding(dp(10), dp(5), dp(10), dp(5));
+        action.setBackground(Ui.rounded(fill, dp(30), stroke, 1));
+        return action;
     }
 
     /** Community screen preview: 1024 bytes, 128x64, page format, 1 = black. */
