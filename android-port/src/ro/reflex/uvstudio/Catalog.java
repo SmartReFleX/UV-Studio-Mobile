@@ -170,19 +170,47 @@ final class Catalog {
 
     /** Community catalog published by the radio community (apps.json, format 1). */
     static List<Entry> community() throws Exception {
-        Exception failure = null;
-        for (String base : new String[] {COMMUNITY, COMMUNITY_CDN}) {
-            try {
-                return communityFrom(base);
-            } catch (Exception e) {
-                failure = e;
-            }
+        return community(null);
+    }
+
+    /**
+     * Both mirrors are asked at once and the first answer wins: on some mobile
+     * networks one of the two hosts is blackholed, and waiting for its timeout
+     * left the progress bar sitting still for half a minute.
+     */
+    static List<Entry> community(Worker.Progress progress) throws Exception {
+        if (progress != null) progress.publish(35, "Reading the community catalog…");
+        final String[] bases = {COMMUNITY_CDN, COMMUNITY};
+        final java.util.concurrent.atomic.AtomicReference<List<Entry>> answer =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<Exception> failure =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.CountDownLatch latch =
+                new java.util.concurrent.CountDownLatch(bases.length);
+        for (final String base : bases) {
+            Thread thread = new Thread(() -> {
+                try {
+                    answer.compareAndSet(null, communityFrom(base));
+                } catch (Exception e) {
+                    failure.compareAndSet(null, e);
+                } finally {
+                    latch.countDown();
+                }
+            }, "catalog-" + base.hashCode());
+            thread.setDaemon(true);
+            thread.start();
         }
-        throw failure != null ? failure : new Exception("Community catalog unreachable");
+        while (!latch.await(150, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            if (answer.get() != null) break;
+        }
+        List<Entry> list = answer.get();
+        if (list != null) return list;
+        Exception e = failure.get();
+        throw e != null ? e : new Exception("Community catalog unreachable");
     }
 
     private static List<Entry> communityFrom(String base) throws Exception {
-        JSONObject root = new JSONObject(getText(base + "/apps.json"));
+        JSONObject root = new JSONObject(getText(base + "/apps.json", 8000, 12000));
         if (root.optInt("format", 0) != 1) {
             throw new Exception("Unsupported community catalog format");
         }
@@ -286,9 +314,13 @@ final class Catalog {
     }
 
     private static String getText(String url) throws Exception {
+        return getText(url, 15000, 20000);
+    }
+
+    private static String getText(String url, int connectMs, int readMs) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setConnectTimeout(15000);
-        connection.setReadTimeout(20000);
+        connection.setConnectTimeout(connectMs);
+        connection.setReadTimeout(readMs);
         connection.setRequestProperty("User-Agent", "UV-Studio-Mobile");
         try {
             int code = connection.getResponseCode();
