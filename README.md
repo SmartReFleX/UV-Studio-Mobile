@@ -30,7 +30,7 @@ Made by **Claudiu Panga** (SmartReFleX) — https://github.com/SmartReFleX
 | **Live view** | 128×64 radio screen drawn natively, full keypad with the secondary labels, LEDs, deep sleep, restart |
 | **Flash firmware** | DFU flashing page by page, then the asset pack; local `.bin` or the firmware catalog |
 | **Firmware slots** | Multiboot: list, write (local or catalog), erase, reset slot settings |
-| **Install applications** | Overlay apps: list, install from a local `.app` or from the official + community catalogs, delete, renumber |
+| **Install applications** | Overlay apps: list, install from a local `.app` or from the official + community catalogs, see when a newer version exists, upgrade in place, delete, renumber |
 | **Calibration** | 512 B backup and restore (`calibration.dat`) |
 | **Boot logo** | Read the logo to PNG, upload an image with threshold and invert |
 | **RF log** | Live stream, table with aligned columns, CSV export |
