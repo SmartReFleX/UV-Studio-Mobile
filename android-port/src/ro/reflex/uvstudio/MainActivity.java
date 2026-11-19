@@ -103,6 +103,8 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         registerUsbReceiver();
+
+        Updates.refresh(this);
     }
 
     /* ===================================================================== */
@@ -118,9 +120,13 @@ public class MainActivity extends Activity {
         column.setPadding(Ui.dp(this, 18), Ui.dp(this, 22), Ui.dp(this, 18), Ui.dp(this, 28));
         scroll.addView(column, Ui.matchWrap());
 
+        LinearLayout header = Ui.row(this);
         TextView logo = Ui.text(this, "UV STUDIO MOBILE", 24, Ui.ACCENT, true);
         logo.setLetterSpacing(0.06f);
-        column.addView(logo);
+        header.addView(logo, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        header.addView(Updates.createChip(this));
+        column.addView(header);
 
         TextView sub = Ui.text(this, "UV-K5 / UV-K1 · native USB OTG", 12, Ui.MUTED, false);
         sub.setPadding(0, Ui.dp(this, 3), 0, Ui.dp(this, 16));
