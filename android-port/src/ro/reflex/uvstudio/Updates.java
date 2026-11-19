@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -35,7 +36,6 @@ final class Updates {
 
     private static final String LATEST =
             "https://api.github.com/repos/SmartReFleX/UV-Studio-Mobile/releases/latest";
-    static final String ACTION_STATUS = "ro.reflex.uvstudio.INSTALL_STATUS";
 
     private static TextView chip;
     private static String latestVersion = "";
@@ -54,14 +54,14 @@ final class Updates {
         view.setGravity(Gravity.CENTER);
         view.setTextColor(Ui.MUTED);
         view.setBackground(Ui.rounded(0x14101320, px(activity, 30), Ui.LINE, 1));
-        view.setText("…");
+        view.setText("...");
         chip = view;
         return view;
     }
 
     static void refresh(final MainActivity app) {
         if (chip != null) {
-            chip.setText("Checking…");
+            chip.setText("Checking...");
             chip.setTextColor(Ui.MUTED);
             chip.setBackground(Ui.rounded(0x14101320, px(app, 30), Ui.LINE, 1));
             chip.setOnClickListener(null);
@@ -105,7 +105,7 @@ final class Updates {
         latestPageUrl = pageUrl;
         if (chip == null) return;
         if (version.isEmpty()) {
-            chip.setText("—");
+            chip.setText("-");
             chip.setTextColor(Ui.MUTED);
             return;
         }
@@ -153,7 +153,7 @@ final class Updates {
     /* ----------------------------- download ------------------------------ */
 
     private static void download(final MainActivity app) {
-        app.toast("Downloading " + latestVersion + "…");
+        app.toast("Downloading " + latestVersion + "...");
         Thread thread = new Thread(() -> {
             try {
                 byte[] apk = fetchBytes(latestApkUrl);
@@ -168,55 +168,37 @@ final class Updates {
 
     private static void install(final MainActivity app, byte[] apk) {
         try {
-            android.content.pm.PackageManager pm = app.getPackageManager();
-            PackageInstaller installer = pm.getPackageInstaller();
-            PackageInstaller.SessionParams params =
-                    new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
-            int session = installer.createSession(params);
-            try (PackageInstaller.Session write = installer.openSession(session)) {
-                try (OutputStream out = write.openWrite("base.apk", 0, apk.length)) {
-                    out.write(apk);
-                }
-                write.fsync(null);
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-                if (Build.VERSION.SDK_INT >= 31) flags |= PendingIntent.FLAG_MUTABLE;
-                Intent status = new Intent(ACTION_STATUS).setPackage(app.getPackageName());
-                PendingIntent pending = PendingIntent.getBroadcast(app, session, status, flags);
-                write.commit(pending.getIntentSender());
+            /* Write the APK where the provider can serve it, then let the system
+             * installer do the work. PackageInstaller sessions were unreliable
+             * here: the status callback never reached the app. */
+            final String name = "update-" + latestVersion + ".apk";
+            File file = new File(app.getCacheDir(), name);
+            try (OutputStream out = new java.io.FileOutputStream(file)) {
+                out.write(apk);
             }
-            app.runOnUiThread(() -> app.toast("Installer opened"));
-        } catch (Exception e) {
-            app.runOnUiThread(() -> app.toast("Install failed: " + e.getMessage()
-                    + "\nAllow \"Install unknown apps\" for UV Studio Mobile and try again."));
-        }
-    }
 
-    /* ------------------------------ system ------------------------------- */
-
-    /** Reports the installer result; declared in the manifest, so no AndroidX. */
-    public static final class Receiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!ACTION_STATUS.equals(intent.getAction())) return;
-            int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS,
-                    PackageInstaller.STATUS_FAILURE);
-            String message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
-            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
-                IntentSender confirmation = intent.getParcelableExtra(Intent.EXTRA_INTENT);
-                if (confirmation != null) {
-                    try {
-                        Intent prompt = new Intent();
-                        prompt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        confirmation.sendIntent(context, 0, prompt, null, null);
-                    } catch (Exception ignored) { }
-                }
+            /* Check what was actually downloaded before handing it over: a stale
+             * or truncated file would otherwise look like a silent failure. */
+            android.content.pm.PackageInfo info = app.getPackageManager()
+                    .getPackageArchiveInfo(file.getAbsolutePath(), 0);
+            if (info == null) {
+                app.runOnUiThread(() -> app.toast("Downloaded file is not a valid APK"));
                 return;
             }
-            String text = status == PackageInstaller.STATUS_SUCCESS
-                    ? "Update installed"
-                    : "Update failed" + (message == null ? "" : ": " + message);
-            android.widget.Toast.makeText(context.getApplicationContext(), text,
-                    android.widget.Toast.LENGTH_LONG).show();
+            String found = info.versionName + " (" + info.versionCode + "), "
+                    + Math.round(apk.length / 1024f) + " KB";
+            app.runOnUiThread(() -> app.toast("Downloaded " + found));
+
+            Uri uri = ApkProvider.uriFor(name);
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            app.startActivity(intent);
+        } catch (Exception e) {
+            app.runOnUiThread(() -> app.toast("Install failed: " + e.getClass().getSimpleName()
+                    + ": " + e.getMessage()
+                    + "\nAllow \"Install unknown apps\" for UV Studio Mobile and try again."));
         }
     }
 
