@@ -29,13 +29,10 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name="ro.reflex.uvstudio.Updates$Receiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="ro.reflex.uvstudio.INSTALL_STATUS" />
-            </intent-filter>
-        </receiver>
+        <provider
+            android:name="ro.reflex.uvstudio.ApkProvider"
+            android:authorities="ro.reflex.uvstudio.port.apk"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>
-
