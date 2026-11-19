@@ -50,7 +50,8 @@ final class DeviceInfoScreen extends ToolScreen {
                     .append(Integer.toHexString(Radio.calibrationOffset(firmware)).toUpperCase())
                     .append(" (").append(Radio.calibrationOffset(firmware) >= 0xB000 ? "external flash" : "MCU EEPROM")
                     .append(")\n");
-            out.append("Ext. flash : ").append(externalFlash ? "supported" : "not answered").append('\n');
+            out.append("Ext. flash : ").append(externalFlash ? "supported"
+                    : "not answered (needs the Service edition on v7)").append('\n');
             out.append("Apps       : ").append(apps ? "supported" : "not answered").append('\n');
             out.append("Timestamp  : 0x")
                     .append(Integer.toHexString(app.radio.timestamp()).toUpperCase()).append('\n');
