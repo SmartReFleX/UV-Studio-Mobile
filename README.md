@@ -44,7 +44,7 @@ app FAP1 header, community catalog apps by SHA-256).
 
 ## Install
 
-1. Download `UV-Studio-Mobile-1.0.0.apk` from the **Releases** page.
+1. Download `UV-Studio-Mobile-1.2.1.apk` from the **Releases** page.
 2. Open it on the phone and allow installation from unknown sources.
 3. Connect the radio with a **USB-C OTG** cable (the phone is the host).
 4. Start the app, tap **Connect** and accept the Android USB permission.
