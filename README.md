@@ -16,7 +16,7 @@ Made by **Claudiu Panga** (SmartReFleX) — https://github.com/SmartReFleX
 ![Home](docs/home.jpg)
 ![Live view](docs/live-view.jpg)
 
-> **Status: first public build (1.0.0), under community testing.** Tested on a
+> **Status: first public build (1.2.1), under community testing.** Tested on a
 > UV-K1 only — the UV-K5 V3 runs the same code path but has not been tried on
 > that hardware. Firmware flashing, calibration writes and external-flash writes
 > have not been validated outside my own radio either. Back up the calibration
@@ -62,7 +62,7 @@ No Gradle: the build script drives the Android SDK command line tools directly
 powershell -NoProfile -ExecutionPolicy Bypass -File .\android-port\build.ps1 -Clean
 ```
 
-Output: `android-port/apk/UV-Studio-Mobile-1.0.0.apk`. Requirements: JDK 17,
+Output: `android-port/apk/UV-Studio-Mobile-1.2.1.apk`. Requirements: JDK 17,
 Android SDK platform 35 and build-tools 35.0.0; `android-port/tools/get-toolchain.ps1`
 fetches them into `%LOCALAPPDATA%\uvk-build`.
 
